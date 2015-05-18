@@ -4,6 +4,11 @@
     android:layout_height="match_parent"
     android:id="@+id/layout">
 
+    <TextView
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:id="@+id/textView" />
+
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

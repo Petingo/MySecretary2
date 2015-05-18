@@ -103,14 +103,14 @@ public class MainActivity extends ActionBarActivity {
         fdbhelper = new FBDBhelper(this);
         fdb = fdbhelper.getWritableDatabase();
 
-
         wdbhelper = new KeywordDBhelper(this);
         wdb = wdbhelper.getWritableDatabase();
 
-
+        uwdbhelper = new UserKeywordDBhelper(this);
+        uwdb = wdbhelper.getWritableDatabase();
         c=this;
 
-        SharedPreferences pref = null;
+        SharedPreferences pref;
         pref = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
 
         if (pref.getBoolean("firstrun", true)) {
@@ -136,7 +136,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View arg4) {
                 TextView editkeyin = (TextView) findViewById(R.id.editText4);
-                String tmp = null;
+                String tmp;
                 tmp = editkeyin.getText().toString();
                 if(tmp.isEmpty()){
                     Toast.makeText(MainActivity.this, "請在上方輸入！", Toast.LENGTH_SHORT).show();
@@ -211,12 +211,13 @@ public class MainActivity extends ActionBarActivity {
         values.put("type", temp);
         uwdb.insert("keyword", null, values);
     }
+
     static public String Natty(String tmp) {
         Date curDate = new Date(System.currentTimeMillis());
         String out = "";
         String testt = "";
 
-        List<java.util.Date> dateList = new ArrayList<java.util.Date>();
+        List<java.util.Date> dateList = new ArrayList<>();
 
         Parser parser = new Parser();
         List<DateGroup> groups = parser.parse(tmp);
@@ -269,7 +270,7 @@ public class MainActivity extends ActionBarActivity {
         {
             public void onClick(DialogInterface dialog, int which) {
             }
-        };;
+        };
         MyAlertDialog.setPositiveButton("OK", OkClick);
         MyAlertDialog.show();
     }
@@ -293,7 +294,7 @@ public class MainActivity extends ActionBarActivity {
 
         InputStream is =getResources().openRawResource(R.raw.keyword);
         byte[] buffer = new byte[8192];
-        int count = 0;
+        int count;
         // 开始复制db文件
         try {
             while ((count = is.read(buffer)) > 0) {
@@ -373,6 +374,8 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+        final EditText FBname = (EditText) selectapp.findViewById(R.id.FBname);
+        FBname.setText(App.getString("FBname", null));
         //TODO End Select APP
         dialog
                 .setTitle("請選擇欲分析的程式：")
@@ -380,12 +383,9 @@ public class MainActivity extends ActionBarActivity {
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        EditText namebox = (EditText) selectapp.findViewById(R.id.editText);
-                        String name = namebox.getText().toString();
+                        String name = FBname.getText().toString();
                         if(!name.isEmpty()){
-                            ContentValues values=new ContentValues();
-                            values.put("endID",name);
-                            wdb.update("count", values, "_ID=3", null);
+                            App.edit().putString("FBname",name).apply();
                         }
                         Log.e("onClick","successful");
                         Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
@@ -425,7 +425,7 @@ public class MainActivity extends ActionBarActivity {
         final Spinner spin =(Spinner)addKWlayout.findViewById(R.id.type_spinner);
         final ArrayAdapter<String> arrayAdapter;
         final String[] list ={"地點","排除"};
-        arrayAdapter=new ArrayAdapter<String>(this,R.layout.support_simple_spinner_dropdown_item,list);
+        arrayAdapter=new ArrayAdapter<>(this,R.layout.support_simple_spinner_dropdown_item,list);
         spin.setAdapter(arrayAdapter);
         switch (id){
             case (R.id.opt1):
@@ -475,11 +475,12 @@ public class MainActivity extends ActionBarActivity {
     }
     public static boolean  analaysis(String tmp){
         Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
+        Cursor uwc = uwdb.rawQuery("Select * from keyword order by weight DESC", null);
 
-        String kwd = "";
-        String place = "";
-        String content = "";
-        String replace = "";
+        String kwd;
+        String place;
+        String content;
+        String replace;
 
         int type;
         long beginTimetmp1;
@@ -494,6 +495,7 @@ public class MainActivity extends ActionBarActivity {
         }
         Calendar beginTime = Calendar.getInstance();
         int wcCount = wc.getCount();
+        int uwcCount = uwc.getCount();
 
         beginTimetmp1 = 0;
         place = "";
@@ -543,12 +545,52 @@ public class MainActivity extends ActionBarActivity {
                 }
                 wc.moveToNext();
             }
+            uwc.moveToFirst();
+            for (int i = 0; i < uwcCount; i++) {
+                kwd = uwc.getString(1);
+                type = uwc.getInt(5);
+                if (kwd.isEmpty()) {
+                    continue;
+                }
+                if (tmp != null && tmp.contains(kwd)) {
+                    content = uwc.getString(2);
+                    replace = uwc.getString(4);
+                    if (content != null && type != 3) {
+                        beginTimetmp1 += Long.valueOf(content);
+                    }
+                    if (replace == null) {
+                        tmp = tmp.replace(kwd, "");
+                    } else {
+                        tmp = tmp.replace(kwd, replace);
+                    }
+                    Log.e("kwd", kwd);
+                    Log.e("type", String.valueOf(type));
+                    switch (type) {
+                        case 1:
+                            GoNatty = true;
+                            break;
+                        case 3:
+                            place = content;
+                            break;
+                        case 4:
+                            drop = false;
+                            i = uwcCount;
+                            break;
+                    }
+                    if(type!=2){
+                        add=true;
+                    }
+                    Log.e("BT", String.valueOf(beginTimetmp1));
+                    Log.e("tmp", tmp);
+                }
+                uwc.moveToNext();
+            }
         }
         if (GoNatty) {
-            String out = "";
+            String out;
             String testt = "";
             out = Natty(tmp);
-            if(matchingValue!=null || matchingValue!="") {
+            if(matchingValue.equals(null) || matchingValue.equals("")) {
                 String[] cutOut = out.split(" ");
                 for (int i = 0; i < 8; i++) {
                     testt += cutOut[i] + '\n';
@@ -561,7 +603,7 @@ public class MainActivity extends ActionBarActivity {
             }
         }
         if (Eng) {
-            String out = "";
+            String out;
             out = Natty(tmp);
             if(!matchingValue.isEmpty()) {
                 String[] cutOut = out.split(" ");

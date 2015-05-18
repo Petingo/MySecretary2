@@ -19,8 +19,14 @@ public class KeywordDBhelper extends SQLiteOpenHelper{
     }
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE " + TABLE_NAME + " ("+_ID+" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                + "word CHAR" + "content CHAR"+ "weight INTEGER" + "replace CHAR"+ "type INTEGER" + ")");
+        db.execSQL("CREATE TABLE " + TABLE_NAME + " ("+_ID
+                +" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                + "word CHAR,"
+                + "content CHAR,"
+                + "weight INTEGER,"
+                + "replace CHAR,"
+                + "type INTEGER"
+                + ")");
         db.execSQL("CREATE TABLE count (_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)");
     }
 
