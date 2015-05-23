@@ -109,203 +109,201 @@ public class MyService extends IntentService {
 
             ContentValues values=new ContentValues();
             tc.moveToFirst();
-
-            Log.e("Line","Start");
-            c.moveToLast();
-            int cCount = c.getCount();
-            int wcCount = wc.getCount();
-            for (int j = 0; j < cCount; j++) {
-                Calendar beginTime = Calendar.getInstance();
-                count=tc.getInt(1);
-                String from_mid = c.getString(4);
-                if(from_mid==null){ //僅別人
-                    c.moveToPrevious();
-                    continue;
-                }
-                if(c.getInt(0)<=count){
-                    j=cCount;
-                    continue;
-                }
-                values.put("endID",c.getString(0));
-                wdb.update("count",values,"_ID=1",null);
-
-                tmp = c.getString(5);
-                ori = tmp;
-                if(tmp.getBytes().length==tmp.length()){
-                    Eng=true;
-                    Log.e("All Eng","true");
-                }
-                beginTimetmp1=0;
-                place = "";
-                add=false;
-                drop=true;
-                wc.moveToFirst();
-                for (int i = 0; i < wcCount && drop; i++) {
-                    kwd = wc.getString(1);
-                    if(kwd.isEmpty()){
+            if(MainActivity.App.getBoolean("Line",true)) {
+                Log.e("Line", "Start");
+                c.moveToLast();
+                int cCount = c.getCount();
+                int wcCount = wc.getCount();
+                for (int j = 0; j < cCount; j++) {
+                    Calendar beginTime = Calendar.getInstance();
+                    count = tc.getInt(1);
+                    String from_mid = c.getString(4);
+                    /*if (from_mid == null) { //僅別人
+                        c.moveToPrevious();
+                        continue;
+                    }*/
+                    if (c.getInt(0) < count) {
+                        j = cCount;
                         continue;
                     }
-                    if (tmp != null && tmp.contains(kwd)) {
-                        content = wc.getString(2);
-                        replace = wc.getString(4);
-                        if(content!=null) {
-                            beginTimetmp1 += Long.valueOf(content);
-                        }
-                        if(replace==null) {
-                            tmp = tmp.replace(kwd,"");
-                        }
-                        else{
-                            tmp = tmp.replace(kwd,replace);
-                        }
-                        Log.e("kwd", kwd);
-                        type = wc.getInt(5);
-                        switch (type) {
-                            case 1:
-                                GoNatty=true;
-                                break;
-                            case 3:
-                                place=content;
-                                break;
-                            case 4:
-                                drop=true;
-                                i=wcCount;
-                                break;
-                        }
-                        if(type!=2){
-                            add=true;
-                        }
+                    values.put("endID", c.getString(0));
+                    wdb.update("count", values, "_id=1", null);
+
+                    tmp = c.getString(5);
+                    ori = tmp;
+                    if (tmp.getBytes().length == tmp.length()) {
+                        Eng = true;
+                        Log.e("All Eng", "true");
                     }
-                    wc.moveToNext();
-                }
-                int cmCount = cm.getCount();
-                cm.moveToFirst();
-                for(int i=0 ; i < cmCount ; i++){
-                    String cmname = cm.getString(3);
-                    String cmserver_name = cm.getString(5);
-                    if(tmp.contains(cmname) && !Modify.contains(cmname)){
+                    beginTimetmp1 = 0;
+                    place = "";
+                    add = false;
+                    drop = true;
+                    wc.moveToFirst();
+                    for (int i = 0; i < wcCount && drop; i++) {
+                        kwd = wc.getString(1);
+                        if (kwd.isEmpty()) {
+                            continue;
+                        }
+                        if (tmp != null && tmp.contains(kwd)) {
+                            content = wc.getString(2);
+                            replace = wc.getString(4);
+                            if (content != null) {
+                                beginTimetmp1 += Long.valueOf(content);
+                            }
+                            if (replace == null) {
+                                tmp = tmp.replace(kwd, "");
+                            } else {
+                                tmp = tmp.replace(kwd, replace);
+                            }
+                            Log.e("kwd", kwd);
+                            type = wc.getInt(5);
+                            switch (type) {
+                                case 1:
+                                    GoNatty = true;
+                                    break;
+                                case 3:
+                                    place = content;
+                                    break;
+                                case 4:
+                                    drop = true;
+                                    i = wcCount;
+                                    break;
+                            }
+                            if (type != 2) {
+                                add = true;
+                            }
+                        }
+                        wc.moveToNext();
+                    }
+                    int cmCount = cm.getCount();
+                    cm.moveToFirst();
+                    for (int i = 0; i < cmCount; i++) {
+                        String cmname = cm.getString(3);
+                        String cmserver_name = cm.getString(5);
+                        if (tmp.contains(cmname) && !Modify.contains(cmname)) {
                             Modify += cmname;
-                        Log.e("name","get");
-                    }
-                    else if(tmp.contains(cmserver_name) && !cmname.equals(cmserver_name) && !Modify.contains(cmname)){
-                        Modify += cmserver_name;
-                        Log.e("servername","get");
-                    }
-                    cm.moveToNext();
-                }
-
-                if(GoNatty||Eng) {
-                    String out = "";
-                    String testt = "";
-                    out = Natty(tmp);
-                    String[] cutOut = out.split(" ");
-                    for (int i = 0; i < 8; i++) {
-                        testt += cutOut[i] + '\n';
+                            Log.e("name", "get");
+                        } else if (tmp.contains(cmserver_name) && !cmname.equals(cmserver_name) && !Modify.contains(cmname)) {
+                            Modify += cmserver_name;
+                            Log.e("servername", "get");
+                        }
+                        cm.moveToNext();
                     }
 
-                    beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2])+1, 0, 0);
-                    Log.e("Natty", beginTime.toString());
-                    Log.e("matchingValue",matchingValue);
-                    tmp=tmp.replace(matchingValue,"");
-                }
-                if((add && drop)||!matchingValue.isEmpty()) {
-                    Long datetmp = beginTime.getTimeInMillis() - beginTime.getTimeInMillis() % 86400000;
-                    //////////
-                    Log.e("Btt1", String.valueOf(beginTimetmp1));
-                    if (tmp.contains("早上") && beginTimetmp1 % 86400000 != 0)
-                        tmp = tmp.replace("早上", "");
-                    if (tmp.contains("中午")) {
+                    if (GoNatty || Eng) {
+                        String out = "";
+                        String testt = "";
+                        out = Natty(tmp);
+                        String[] cutOut = out.split(" ");
+                        for (int i = 0; i < 8; i++) {
+                            testt += cutOut[i] + '\n';
+                        }
+
+                        beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]) + 1, 0, 0);
+                        Log.e("Natty", beginTime.toString());
+                        Log.e("matchingValue", matchingValue);
+                        tmp = tmp.replace(matchingValue, "");
+                    }
+                    if ((add && drop) || !matchingValue.isEmpty()) {
+                        Long datetmp = beginTime.getTimeInMillis() - beginTime.getTimeInMillis() % 86400000;
+                        //////////
+                        Log.e("Btt1", String.valueOf(beginTimetmp1));
+                        if (tmp.contains("早上") && beginTimetmp1 % 86400000 != 0)
+                            tmp = tmp.replace("早上", "");
+                        if (tmp.contains("中午")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 39600000;
+                            else
+                                tmp = tmp.replace("中午", "");
+                        }
+                        if (tmp.contains("下午")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 50400000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("下午", "");
+                            }
+                        }
+                        if (tmp.contains("傍晚")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 61200000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("傍晚", "");
+                            }
+                        }
+                        if (tmp.contains("晚上")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 72000000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("晚上", "");
+                            }
+                        }
                         if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 39600000;
-                        else
-                            tmp = tmp.replace("中午", "");
-                    }
-                    if (tmp.contains("下午")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 50400000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("下午", "");
+                            beginTimetmp1 += 28800000;
+
+                        //////////
+                        beginTime.setTimeInMillis(datetmp + beginTimetmp1);
+                        //cltmp %= 86400000;
+                        //cltmp += beginTimetmp1;
+
+                        wc.moveToLast();
+                        String desc = tmp;
+                        for (int i = 0; i < wcCount; i++) {
+                            kwd = wc.getString(2);
+                            type = wc.getInt(4);
+                            if (kwd != null && desc.contains(kwd) && (type == 1 || type == 3)) {
+                                desc = desc.replace(kwd, "");
+                            }
+                            wc.moveToPrevious();
                         }
-                    }
-                    if (tmp.contains("傍晚")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 61200000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("傍晚", "");
+                        desc = desc.replace("  ", " ");
+                        Log.e("建立事項", "");
+                        Cursor cc = db.rawQuery("Select * from contacts", null);
+                        Integer ccCount = cc.getCount();
+                        cc.moveToFirst();
+                        for (int icc = 0; icc < ccCount; icc++) {
+                            if (cc.getString(0).equals(from_mid)) {
+                                from = cc.getString(3);
+                            }
+                            cc.moveToNext();
                         }
-                    }
-                    if (tmp.contains("晚上")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 72000000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("晚上", "");
+
+                        Long Timezone = Long.valueOf(28800000);
+                        if (Eng)
+                            Timezone = Long.valueOf(0);
+                        Log.e(String.valueOf(beginTime.getTimeInMillis()), String.valueOf(System.currentTimeMillis()));
+                        if (beginTime.getTimeInMillis() < System.currentTimeMillis() + Timezone) {
+                            Log.e("set", "OK");
+                            beginTime.setTimeInMillis(System.currentTimeMillis() + Timezone);
                         }
-                    }
-                    if (beginTimetmp1 % 86400000 == 0)
-                        beginTimetmp1 += 28800000;
 
-                    //////////
-                    beginTime.setTimeInMillis(datetmp + beginTimetmp1);
-                    //cltmp %= 86400000;
-                    //cltmp += beginTimetmp1;
-
-                    wc.moveToLast();
-                    String desc = tmp;
-                    for (int i = 0; i < wcCount; i++) {
-                        kwd = wc.getString(2);
-                        type = wc.getInt(4);
-                        if (kwd != null && desc.contains(kwd) && (type == 1 || type == 3)) {
-                            desc = desc.replace(kwd, "");
+                        String Modify_toString = "";
+                        if (!Modify.isEmpty()) {
+                            Modify_toString += Modify + "將出席";
                         }
-                        wc.moveToPrevious();
-                    }
-                    desc = desc.replace("  ", " ");
-                    Log.e("建立事項", "");
-                    Cursor cc = db.rawQuery("Select * from contacts", null);
-                    Integer ccCount = cc.getCount();
-                    cc.moveToFirst();
-                    for (int icc = 0; icc < ccCount; icc++) {
-                        if (cc.getString(0).equals(from_mid)) {
-                            from = cc.getString(3);
+                        Intent intent_cal = new Intent(Intent.ACTION_INSERT)
+                                .setData(CalendarContract.Events.CONTENT_URI)
+                                        //.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allday)
+                                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime.getTimeInMillis() - 28800000)
+                                .putExtra(CalendarContract.Events.TITLE, desc)
+                                .putExtra(CalendarContract.Events.DESCRIPTION, "「" + ori + "」" + "－" + "由 " + from + " 發送\n" + Modify_toString)
+                                .putExtra(CalendarContract.Events.EVENT_LOCATION, place)
+                                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY);
+                        intent_cal.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent_cal);
+                        intent_cal.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        Log.e("calendar", "successful");
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                        cc.moveToNext();
-                    }
-
-                    Long Timezone = Long.valueOf(28800000);
-                    if (Eng)
-                        Timezone = Long.valueOf(0);
-                    Log.e(String.valueOf(beginTime.getTimeInMillis()), String.valueOf(System.currentTimeMillis()));
-                    if (beginTime.getTimeInMillis() < System.currentTimeMillis() + Timezone) {
-                        Log.e("set", "OK");
-                        beginTime.setTimeInMillis(System.currentTimeMillis() + Timezone);
-                    }
-
-                    String Modify_toString="";
-                    if(!Modify.isEmpty()){
-                        Modify_toString+=Modify + "將出席";
-                    }
-                    Intent intent_cal = new Intent(Intent.ACTION_INSERT)
-                            .setData(CalendarContract.Events.CONTENT_URI)
-                                    //.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allday)
-                            .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime.getTimeInMillis() - 28800000)
-                            .putExtra(CalendarContract.Events.TITLE, desc)
-                            .putExtra(CalendarContract.Events.DESCRIPTION, "「" + ori + "」" + "－" + "由 " + from + " 發送\n" + Modify_toString)
-                            .putExtra(CalendarContract.Events.EVENT_LOCATION, place)
-                            .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY);
-                    intent_cal.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent_cal);
-                    intent_cal.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    Log.e("calendar", "successful");
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
 
 
-                }
+                    }
                     c.moveToPrevious();
                     kwd = null;
                     add = false;
@@ -313,209 +311,210 @@ public class MyService extends IntentService {
                     GoNatty = false;
                     Eng = false;
                 }
-            Log.e("Line", "end");
-            db.close();
-
+                Log.e("Line", "end");
+                db.close();
+            }
 //////////////////////FaceBook////////////////////
-            Log.e("FB","Start");
-            GetFBDB.copy();
-            tc.moveToNext();
-            fcc.moveToLast();
-            String myname = fcc.getString(1);
-            Log.e("name", myname);
+            if(MainActivity.App.getBoolean("FB",true)) {
+                Log.e("FB", "Start");
+                GetFBDB.copy();
+                tc.moveToNext();
+                fcc.moveToLast();
+                String myname = fcc.getString(1);
+                Log.e("name", myname);
 
-            fc.moveToLast();
-            int fcCount = fc.getCount();
-            for (int j = 0; j < fcCount; j++) {
-                Calendar beginTime = Calendar.getInstance();
-                count=tc.getLong(1);
-                String forth = fc.getString(4);
-                if(myname.isEmpty()){
-                    j=fcCount;
-                    continue;
-                }
-                if(forth==null){
-                    fc.moveToPrevious();
-                    continue;
-                }
-                if(forth.contains(myname)){
-                    fc.moveToPrevious();
-                    continue;
-                }
-                Long ktmp = Long.valueOf(fc.getString(5));
-                if(ktmp <= count){
-                    fc.moveToPrevious();
-                    continue;
-                }
-
-                values.put("endID",fc.getString(5));
-                wdb.update("count",values,"_ID=2",null);
-
-                tmp = fc.getString(3);
-                ori = tmp;
-
-                if(tmp.getBytes().length==tmp.length()) {
-                    Eng = true;
-                    Log.e("All Eng", "true");
-                }
-                beginTimetmp1=0;
-                place = "";
-                add=false;
-                drop=true;
-                wc.moveToFirst();
-                for (int i = 0; i < wcCount && drop; i++) {
-                    kwd = wc.getString(1);
-                    if(kwd.isEmpty()){
+                fc.moveToLast();
+                int fcCount = fc.getCount();
+                for (int j = 0; j < fcCount; j++) {
+                    Calendar beginTime = Calendar.getInstance();
+                    count = tc.getLong(1);
+                    String forth = fc.getString(4);
+                    if (myname.isEmpty()) {
+                        j = fcCount;
                         continue;
                     }
-                    if (tmp != null && tmp.contains(kwd)) {
-                        content = wc.getString(2);
-                        replace = wc.getString(4);
-                        if(content!=null) {
-                            beginTimetmp1 += Long.valueOf(content);
+                    if (forth == null) {
+                        fc.moveToPrevious();
+                        continue;
+                    }
+                    if (forth.contains(myname)) {
+                        fc.moveToPrevious();
+                        continue;
+                    }
+                    Long ktmp = Long.valueOf(fc.getString(5));
+                    if (ktmp <= count) {
+                        fc.moveToPrevious();
+                        continue;
+                    }
+
+                    values.put("endID", fc.getString(5));
+                    wdb.update("count", values, "_id=2", null);
+
+                    tmp = fc.getString(3);
+                    ori = tmp;
+
+                    if (tmp.getBytes().length == tmp.length()) {
+                        Eng = true;
+                        Log.e("All Eng", "true");
+                    }
+                    beginTimetmp1 = 0;
+                    place = "";
+                    add = false;
+                    drop = true;
+                    wc.moveToFirst();
+                    int wcCount = wc.getCount();
+                    for (int i = 0; i < wcCount && drop; i++) {
+                        kwd = wc.getString(1);
+                        if (kwd.isEmpty()) {
+                            continue;
                         }
-                        if(replace==null) {
-                            tmp = tmp.replace(kwd,"");
+                        if (tmp != null && tmp.contains(kwd)) {
+                            content = wc.getString(2);
+                            replace = wc.getString(4);
+                            if (content != null) {
+                                beginTimetmp1 += Long.valueOf(content);
+                            }
+                            if (replace == null) {
+                                tmp = tmp.replace(kwd, "");
+                            } else {
+                                tmp = tmp.replace(kwd, replace);
+                            }
+                            Log.e("kwd", kwd);
+                            type = wc.getInt(5);
+                            switch (type) {
+                                case 1:
+                                    GoNatty = true;
+                                    break;
+                                case 3:
+                                    place = content;
+                                    break;
+                                case 4:
+                                    drop = true;
+                                    i = wcCount;
+                                    break;
+                            }
+                            if (type != 2) {
+                                add = true;
+                            }
                         }
-                        else{
-                            tmp = tmp.replace(kwd,replace);
+                        wc.moveToNext();
+                    }
+                    if (GoNatty || Eng) {
+                        String out = "";
+                        String testt = "";
+                        out = Natty(tmp);
+                        String[] cutOut = out.split(" ");
+                        for (int i = 0; i < 8; i++) {
+                            testt += cutOut[i] + '\n';
                         }
-                        Log.e("kwd", kwd);
-                        type = wc.getInt(5);
-                        switch (type) {
-                            case 1:
-                                GoNatty=true;
-                                break;
-                            case 3:
-                                place=content;
-                                break;
-                            case 4:
-                                drop=true;
-                                i=wcCount;
-                                break;
+
+                        beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]) + 1, 0, 0);
+                        Log.e("Natty", beginTime.toString());
+                        Log.e("matchingValue", matchingValue);
+                        tmp = tmp.replace(matchingValue, "");
+                    }
+                    if ((add || !matchingValue.isEmpty()) && drop) {
+                        Long datetmp = beginTime.getTimeInMillis() - beginTime.getTimeInMillis() % 86400000;
+                        //////////
+                        Log.e("Btt1", String.valueOf(beginTimetmp1));
+                        if (tmp.contains("早上") && beginTimetmp1 % 86400000 != 0)
+                            tmp = tmp.replace("早上", "");
+                        if (tmp.contains("中午")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 39600000;
+                            else
+                                tmp = tmp.replace("中午", "");
                         }
-                        if(type!=2){
-                            add=true;
+                        if (tmp.contains("下午")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 50400000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("下午", "");
+                            }
+                        }
+                        if (tmp.contains("傍晚")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 61200000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("傍晚", "");
+                            }
+                        }
+                        if (tmp.contains("晚上")) {
+                            if (beginTimetmp1 % 86400000 == 0)
+                                beginTimetmp1 += 72000000;
+                            else {
+                                beginTimetmp1 += 43200000;
+                                tmp = tmp.replace("晚上", "");
+                            }
+                        }
+                        if (beginTimetmp1 % 86400000 == 0)
+                            beginTimetmp1 += 28800000;
+
+                        //////////
+                        beginTime.setTimeInMillis(datetmp + beginTimetmp1);
+
+                        //cltmp %= 86400000;
+                        //cltmp += beginTimetmp1;
+
+                        wc.moveToLast();
+                        String desc = tmp;
+                        for (int i = 0; i < wcCount; i++) {
+                            kwd = wc.getString(2);
+                            type = wc.getInt(4);
+                            if (kwd != null && desc.contains(kwd) && (type == 1 || type == 3)) {
+                                desc = desc.replace(kwd, "");
+                            }
+                            wc.moveToPrevious();
+                        }
+                        desc = desc.replace("  ", " ");
+                        Log.e("建立事項", "");
+                        from = fc.getString(4);
+                        String[] sendercutOut = from.split("\"");
+                        Log.e("senderout", sendercutOut[11]);
+                        from = sendercutOut[11];
+
+                        Long Timezone = Long.valueOf(28800000);
+                        if (Eng)
+                            Timezone = Long.valueOf(0);
+                        Log.e(String.valueOf(beginTime.getTimeInMillis()), String.valueOf(System.currentTimeMillis()));
+                        if (beginTime.getTimeInMillis() < System.currentTimeMillis() + Timezone) {
+                            Log.e("set", "OK");
+                            beginTime.setTimeInMillis(System.currentTimeMillis() + Timezone);
+                        }
+
+                        Intent intent_cal = new Intent(Intent.ACTION_INSERT)
+                                .setData(CalendarContract.Events.CONTENT_URI)
+                                        //.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allday)
+                                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime.getTimeInMillis() - Timezone)
+                                .putExtra(CalendarContract.Events.TITLE, desc)
+                                .putExtra(CalendarContract.Events.DESCRIPTION, ori + "－" + from)
+                                .putExtra(CalendarContract.Events.EVENT_LOCATION, place)
+                                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY);
+                        intent_cal.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent_cal);
+                        intent_cal.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        Log.e("calendar", "successful");
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
                     }
-                    wc.moveToNext();
+
+                    fc.moveToPrevious();
+                    kwd = null;
+                    add = false;
+                    drop = true;
+                    GoNatty = false;
+                    Eng = false;
                 }
-                if(GoNatty||Eng) {
-                    String out = "";
-                    String testt = "";
-                    out = Natty(tmp);
-                    String[] cutOut = out.split(" ");
-                    for (int i = 0; i < 8; i++) {
-                        testt += cutOut[i] + '\n';
-                    }
-
-                    beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2])+1, 0, 0);
-                    Log.e("Natty", beginTime.toString());
-                    Log.e("matchingValue",matchingValue);
-                    tmp = tmp.replace(matchingValue,"");
-                }
-                if((add||!matchingValue.isEmpty()) && drop) {
-                    Long datetmp = beginTime.getTimeInMillis() - beginTime.getTimeInMillis() % 86400000;
-                    //////////
-                    Log.e("Btt1", String.valueOf(beginTimetmp1));
-                    if (tmp.contains("早上") && beginTimetmp1 % 86400000 != 0)
-                        tmp = tmp.replace("早上", "");
-                    if (tmp.contains("中午")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 39600000;
-                        else
-                            tmp = tmp.replace("中午", "");
-                    }
-                    if (tmp.contains("下午")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 50400000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("下午", "");
-                        }
-                    }
-                    if (tmp.contains("傍晚")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 61200000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("傍晚", "");
-                        }
-                    }
-                    if (tmp.contains("晚上")) {
-                        if (beginTimetmp1 % 86400000 == 0)
-                            beginTimetmp1 += 72000000;
-                        else {
-                            beginTimetmp1 += 43200000;
-                            tmp = tmp.replace("晚上", "");
-                        }
-                    }
-                    if (beginTimetmp1 % 86400000 == 0)
-                        beginTimetmp1 += 28800000;
-
-                    //////////
-                    beginTime.setTimeInMillis(datetmp + beginTimetmp1);
-
-                    //cltmp %= 86400000;
-                    //cltmp += beginTimetmp1;
-
-                    wc.moveToLast();
-                    String desc = tmp;
-                    for (int i = 0; i < wcCount; i++) {
-                        kwd = wc.getString(2);
-                        type = wc.getInt(4);
-                        if (kwd != null && desc.contains(kwd) && (type == 1 || type == 3)) {
-                            desc = desc.replace(kwd, "");
-                        }
-                        wc.moveToPrevious();
-                    }
-                    desc = desc.replace("  ", " ");
-                    Log.e("建立事項", "");
-                    from = fc.getString(4);
-                    String[] sendercutOut = from.split("\"");
-                    Log.e("senderout", sendercutOut[11]);
-                    from = sendercutOut[11];
-
-                    Long Timezone = Long.valueOf(28800000);
-                    if (Eng)
-                        Timezone = Long.valueOf(0);
-                    Log.e(String.valueOf(beginTime.getTimeInMillis()), String.valueOf(System.currentTimeMillis()));
-                    if (beginTime.getTimeInMillis() < System.currentTimeMillis() + Timezone) {
-                        Log.e("set", "OK");
-                        beginTime.setTimeInMillis(System.currentTimeMillis() + Timezone);
-                    }
-
-                    Intent intent_cal = new Intent(Intent.ACTION_INSERT)
-                            .setData(CalendarContract.Events.CONTENT_URI)
-                                    //.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allday)
-                            .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime.getTimeInMillis() - Timezone)
-                            .putExtra(CalendarContract.Events.TITLE, desc)
-                            .putExtra(CalendarContract.Events.DESCRIPTION, ori + "－" + from)
-                            .putExtra(CalendarContract.Events.EVENT_LOCATION, place)
-                            .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY);
-                    intent_cal.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent_cal);
-                    intent_cal.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    Log.e("calendar", "successful");
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                fc.moveToPrevious();
-                kwd = null;
-                add = false;
-                drop = true;
-                GoNatty = false;
-                Eng = false;
+                Log.e("FB", "end");
+                fdb.close();
+                //////////////////////FaceBook//////////////////////
+                wdb.close();
             }
-            Log.e("FB", "end");
-            fdb.close();
-            //////////////////////FaceBook//////////////////////
-            wdb.close();
             Log.e("Service","end");
             try {
                 Thread.sleep(3000);
