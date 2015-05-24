@@ -118,10 +118,10 @@ public class MyService extends IntentService {
                     Calendar beginTime = Calendar.getInstance();
                     count = tc.getInt(1);
                     String from_mid = c.getString(4);
-                    /*if (from_mid == null) { //僅別人
+                    if (from_mid == null) { //僅別人
                         c.moveToPrevious();
                         continue;
-                    }*/
+                    }
                     if (c.getInt(0) < count) {
                         j = cCount;
                         continue;

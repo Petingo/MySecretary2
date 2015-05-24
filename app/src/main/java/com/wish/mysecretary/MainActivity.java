@@ -97,7 +97,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
     /*End of Announce of ClipBoard*/
-
+    /**/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
