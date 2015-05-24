@@ -6,15 +6,36 @@
     android:touchscreenBlocksFocus="false"
     android:weightSum="1" >
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="65dp"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="我的專屬助理正在為您服務..."
-        android:id="@+id/dialogView"
-        android:gravity="center"
-        android:textColor="#ff737373"
-        android:background="@drawable/dialog" />
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:id="@+id/editText4"
+        android:hint="例如：明天下午三點月進度報告"
+        android:layout_gravity="center"
+        android:gravity="bottom|center" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="顯示於提醒列"
+            android:id="@+id/addNoti"
+            android:layout_weight="1"
+            android:background="#ff02a1e9" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="加入行事曆"
+            android:id="@+id/button1"
+            android:layout_weight="1"
+            android:background="#ff02a39b" />
+
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
@@ -30,21 +51,17 @@
         android:layout_gravity="center"
         android:adjustViewBounds="true"
         android:scaleType="fitXY"
-        android:background="@android:color/transparent" />
+        android:background="@android:color/transparent"
+        android:src="@drawable/icon_on1" />
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:id="@+id/editText4"
-        android:hint="例如：明天下午三點月進度報告"
-        android:layout_gravity="center"
-        android:gravity="bottom|center" />
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="OK"
-        android:id="@+id/button1"
-        android:background="#ff02a39b" />
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="65dp"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="我的專屬助理正在為您服務..."
+        android:id="@+id/dialogView"
+        android:gravity="center"
+        android:textColor="#ff737373"
+        android:background="@drawable/dialog" />
 
 </LinearLayout>
