@@ -11,7 +11,6 @@ public class FBDBhelper extends SQLiteOpenHelper{
     public static final String DATABASE_NAME="FB";
     public static final int VERSION=200;
 
-    private static SQLiteDatabase database;
     public FBDBhelper(Context context){
         super(context, DATABASE_NAME, null,VERSION);
 

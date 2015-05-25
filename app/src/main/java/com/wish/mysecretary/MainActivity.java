@@ -1,7 +1,11 @@
 package com.wish.mysecretary;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentValues;
@@ -14,10 +18,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.AvoidXfermode;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTabHost;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -63,7 +69,7 @@ public class MainActivity extends ActionBarActivity {
     static private SQLiteDatabase uwdb;
     private IncomingSms Incoming_Sms = null;
     private static final String SMS_Action="android.provider.Telephony.SMS_RECEIVED";
-
+    public static SharedPreferences App;
     /*Announce of ClipBoard*/
     ClipboardManager myClipBoard ;
     static boolean bHasClipChangedListener = false;
@@ -97,6 +103,33 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_new);
 
+        final SharedPreferences pref;
+        pref = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
+        App = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
+        if (pref.getBoolean("firstrun", true)) {
+            copyKeyworddb();
+            App.edit().putBoolean("FB", false).apply();
+            App.edit().putBoolean("Line", false).apply();
+            ShowRecordApp();
+            if (App.getBoolean("FB", true)) {
+                GetFBDB.copy();
+            }
+            if (App.getBoolean("Line", true)) {
+                GetLineDB.copy();
+            }
+            InitilizeChatHistory();
+            showintro();
+            pref.edit().putBoolean("firstrun", false).apply();
+            pref.edit().putInt("version", 3).apply();
+        }
+        Log.e("version", String.valueOf(pref.getInt("version", 0)));
+        if (pref.getInt("version",0)<3) {
+            copyKeyworddb();
+            InitilizeChatHistory();
+            pref.edit().putBoolean("updatefirstrun", false).apply();
+            pref.edit().putInt("version", 3).apply();
+        }
+
         dbhelper = new LineDBhelper(this);
         db = dbhelper.getWritableDatabase();
 
@@ -107,26 +140,8 @@ public class MainActivity extends ActionBarActivity {
         wdb = wdbhelper.getWritableDatabase();
 
         uwdbhelper = new UserKeywordDBhelper(this);
-        uwdb = wdbhelper.getWritableDatabase();
+        uwdb = uwdbhelper.getWritableDatabase();
         c=this;
-
-        SharedPreferences pref;
-        pref = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
-
-        if (pref.getBoolean("firstrun", true)) {
-            copyKeyworddb();
-            InitilizeLineChatHistory();
-            showintro();
-            pref.edit().putBoolean("firstrun", false).apply();
-            pref.edit().putInt("version", 3).apply();
-        }
-        Log.e("version", String.valueOf(pref.getInt("version", 0)));
-        if (pref.getInt("version",0)<3) {
-            copyKeyworddb();
-            InitilizeLineChatHistory();
-            pref.edit().putBoolean("updatefirstrun", false).apply();
-            pref.edit().putInt("version", 3).apply();
-        }
 
         Button btn1 = (Button) findViewById(R.id.button1);
         btn1.setOnClickListener(new View.OnClickListener() {
@@ -138,13 +153,44 @@ public class MainActivity extends ActionBarActivity {
                 TextView editkeyin = (TextView) findViewById(R.id.editText4);
                 String tmp;
                 tmp = editkeyin.getText().toString();
-                if(tmp.isEmpty()){
+                if (tmp.isEmpty()) {
                     Toast.makeText(MainActivity.this, "請在上方輸入！", Toast.LENGTH_SHORT).show();
-                }
-                else {
+                } else {
                     editkeyin.setText("");
-                    nomatterwhat=true;
+                    nomatterwhat = true;
                     analaysis(tmp);
+                }
+
+            }
+
+        });
+        Button addNoti = (Button) findViewById(R.id.addNoti);
+        addNoti.setOnClickListener(new View.OnClickListener() {
+            final Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
+
+            //final Cursor tc=wdb.rawQuery("Select * from count",null);
+            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void onClick(View arg4) {
+                TextView editkeyin = (TextView) findViewById(R.id.editText4);
+                String tmp;
+                tmp = editkeyin.getText().toString();
+                if (tmp.isEmpty()) {
+                    Toast.makeText(MainActivity.this, "請在上方輸入！", Toast.LENGTH_SHORT).show();
+                } else {
+                    editkeyin.setText("");
+                    pref.edit().putInt("noti",pref.getInt("noti",0)+1).apply();
+                    final int notifyID = 1;//pref.getInt("noti",0);; // 通知的識別號碼
+                    final int priority = Notification.PRIORITY_MAX;
+                    final NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
+                    final Notification notification = new Notification.Builder(getApplicationContext())
+                            .setSmallIcon(R.drawable.ic_launcher)
+                            .setContentTitle(tmp)
+                            .setContentText("點擊以消除")
+                            .setAutoCancel(true)
+                            .setPriority(priority).build();
+                            /*.setOngoing(true)*/
+                    notificationManager.notify(notifyID, notification);
                 }
 
             }
@@ -154,7 +200,7 @@ public class MainActivity extends ActionBarActivity {
         final SharedPreferences runningOrNot = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
         final ImageButton SmileButton = (ImageButton)findViewById(R.id.smileButton);
         if(runningOrNot.getBoolean("chk", true)){
-            DialogV.setText("點我開始背景服務...");
+            DialogV.setText("點我的臉開始背景服務...");
             SmileButton.setImageResource(R.drawable.icon_off);
         }
         else{
@@ -183,7 +229,7 @@ public class MainActivity extends ActionBarActivity {
                     startService(intent);
                 } else {
                     Toast.makeText(MainActivity.this, "end", Toast.LENGTH_SHORT).show();
-                    DialogV.setText("點我開始背景服務...");
+                    DialogV.setText("點我的臉開始背景服務...");
                     runningOrNot.edit().putBoolean("chk", true).apply();
 
                     UnRegPrimaryClipChanged();
@@ -312,7 +358,6 @@ public class MainActivity extends ActionBarActivity {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        InitilizeLineChatHistory();
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -323,9 +368,8 @@ public class MainActivity extends ActionBarActivity {
     public void ShowRecordApp(){
         AlertDialog.Builder dialog=new AlertDialog.Builder(this);
         LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
-        final View selectapp=inflater.inflate(R.layout.selectapp,null);
+        final View selectapp=inflater.inflate(R.layout.selectapp, null);
         //TODO Select APP
-        final SharedPreferences App = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
         final CheckBox FB = (CheckBox) selectapp.findViewById(R.id.FB);
         if (App.getBoolean("FB", true)) {
             FB.setChecked(true);
@@ -393,24 +437,26 @@ public class MainActivity extends ActionBarActivity {
                 })
                 .show();
     }
-    public void InitilizeLineChatHistory(){
-        final Cursor c = db.rawQuery("Select * from chat_history", null);
-        final Cursor fc = fdb.rawQuery("Select * from messages",null);
-        c.moveToLast();
-        fc.moveToLast();
+    public void InitilizeChatHistory(){
         ContentValues values=new ContentValues();
-        values.put("endID","0");
-        wdb.update("count",values,"_ID=1",null);
+        if (App.getBoolean("FB", true)) {
+            GetFBDB.copy();
+            final Cursor fc = fdb.rawQuery("Select * from messages",null);
+            fc.moveToLast();
+            values.put("endID", fc.getString(5));
+            wdb.update("count", values, "_id=2", null);
+            fc.close();
+        }
+        if (App.getBoolean("Line", true)) {
+            GetLineDB.copy();
+            final Cursor c = db.rawQuery("Select * from chat_history", null);
+            c.moveToLast();
+            values = new ContentValues();
+            values.put("endID", c.getString(0));
+            wdb.update("count", values, "_id=1", null);
+            c.close();
+        }
 
-        values.put("endID","0");
-        wdb.update("count",values,"_ID=2",null);
-
-        values.put("endID", c.getString(0));
-        wdb.update("count", values, "_ID=1", null);
-
-        values.put("endID",fc.getString(5));
-        wdb.update("count", values, "_ID=2", null);
-        c.close();
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -456,7 +502,7 @@ public class MainActivity extends ActionBarActivity {
                 Toast.makeText(MainActivity.this, "Succeed", Toast.LENGTH_SHORT).show();
                 break;
             case (R.id.opt3):
-                InitilizeLineChatHistory();
+                InitilizeChatHistory();
                 Toast.makeText(MainActivity.this, "Succeed", Toast.LENGTH_SHORT).show();
                 break;
             case(R.id.SelectAPP):
@@ -488,7 +534,6 @@ public class MainActivity extends ActionBarActivity {
         boolean drop = true;
         boolean GoNatty = false;
         boolean Eng = false;
-        boolean addnow = false;
 
         if (tmp.getBytes().length == tmp.length()) {
             Eng = true;
@@ -499,10 +544,6 @@ public class MainActivity extends ActionBarActivity {
 
         beginTimetmp1 = 0;
         place = "";
-
-        if (tmp.contains("分鐘後")) {
-            addnow = true;
-        }
 
         if(!Eng) {
             wc.moveToFirst();
@@ -549,6 +590,7 @@ public class MainActivity extends ActionBarActivity {
             for (int i = 0; i < uwcCount; i++) {
                 kwd = uwc.getString(1);
                 type = uwc.getInt(5);
+                Log.e("userKWD",kwd);
                 if (kwd.isEmpty()) {
                     continue;
                 }
@@ -590,7 +632,7 @@ public class MainActivity extends ActionBarActivity {
             String out;
             String testt = "";
             out = Natty(tmp);
-            if(matchingValue.equals(null) || matchingValue.equals("")) {
+            if(!matchingValue.isEmpty()) {
                 String[] cutOut = out.split(" ");
                 for (int i = 0; i < 8; i++) {
                     testt += cutOut[i] + '\n';
@@ -670,14 +712,9 @@ public class MainActivity extends ActionBarActivity {
         if(Eng)
             Timezone = Long.valueOf(0);
 
-        if(beginTime.getTimeInMillis()<System.currentTimeMillis()+Timezone || addnow) {
+        if(beginTime.getTimeInMillis()<System.currentTimeMillis()+Timezone) {
             Long bTtmp = beginTime.getTimeInMillis();
-            if(addnow){
-                beginTime.setTimeInMillis(System.currentTimeMillis()+beginTimetmp1+Timezone);
-            }
-            else {
-                beginTime.setTimeInMillis(bTtmp + 43200000);
-            }
+            beginTime.setTimeInMillis(bTtmp + 43200000);
         }
 
         if(nomatterwhat||(add && drop)) {

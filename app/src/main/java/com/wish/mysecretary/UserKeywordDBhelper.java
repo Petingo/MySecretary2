@@ -12,7 +12,6 @@ public class UserKeywordDBhelper extends SQLiteOpenHelper{
     public static final String TABLE_NAME="keyword";
     public static final int VERSION=1;
 
-    private static SQLiteDatabase database;
     public UserKeywordDBhelper(Context context){
         super(context, DATABASE_NAME, null,VERSION);
 
