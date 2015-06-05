@@ -70,6 +70,7 @@ public class MainActivity extends ActionBarActivity {
     private IncomingSms Incoming_Sms = null;
     private static final String SMS_Action="android.provider.Telephony.SMS_RECEIVED";
     public static SharedPreferences App;
+    public static SharedPreferences runningOrNot;
     /*Announce of ClipBoard*/
     ClipboardManager myClipBoard ;
     static boolean bHasClipChangedListener = false;
@@ -81,7 +82,10 @@ public class MainActivity extends ActionBarActivity {
             clipDatatmp = clipDatatmp.replace(" }","");
             Log.d("***** clip changed,", "clipData:" + clipData.getItemAt(0));
             nomatterwhat=false;
-            MainActivity.analaysis(clipDatatmp);
+            if(!clipDatatmp.equals(App.getString("clipContent", null))) {
+                MainActivity.analaysis(clipDatatmp);
+                App.edit().putString("clipContent",clipDatatmp).apply();
+            }
         }
     };
     private void RegPrimaryClipChanged(){
@@ -106,6 +110,7 @@ public class MainActivity extends ActionBarActivity {
         final SharedPreferences pref;
         pref = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
         App = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
+        runningOrNot = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
         if (pref.getBoolean("firstrun", true)) {
             copyKeyworddb();
             App.edit().putBoolean("FB", false).apply();
@@ -147,7 +152,6 @@ public class MainActivity extends ActionBarActivity {
         btn1.setOnClickListener(new View.OnClickListener() {
             final Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
 
-            //final Cursor tc=wdb.rawQuery("Select * from count",null);
             @Override
             public void onClick(View arg4) {
                 TextView editkeyin = (TextView) findViewById(R.id.editText4);
@@ -168,7 +172,6 @@ public class MainActivity extends ActionBarActivity {
         addNoti.setOnClickListener(new View.OnClickListener() {
             final Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
 
-            //final Cursor tc=wdb.rawQuery("Select * from count",null);
             @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
             @Override
             public void onClick(View arg4) {
@@ -180,24 +183,30 @@ public class MainActivity extends ActionBarActivity {
                 } else {
                     editkeyin.setText("");
                     pref.edit().putInt("noti",pref.getInt("noti",0)+1).apply();
-                    final int notifyID = 1;//pref.getInt("noti",0);; // 通知的識別號碼
+
+                    final int notifyID = 5;//pref.getInt("noti",0);; // 通知的識別號碼
                     final int priority = Notification.PRIORITY_MAX;
+                    final Intent intent = new Intent(getApplicationContext(), nothing.class);
+                    final int flags = PendingIntent.FLAG_ONE_SHOT;
+                    final PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), notifyID, intent, flags);
                     final NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
                     final Notification notification = new Notification.Builder(getApplicationContext())
                             .setSmallIcon(R.drawable.ic_launcher)
                             .setContentTitle(tmp)
                             .setContentText("點擊以消除")
+                            .setPriority(priority)
+                            .setContentIntent(pendingIntent)
                             .setAutoCancel(true)
-                            .setPriority(priority).build();
+                            .setOngoing(true)
+                            .build();
                             /*.setOngoing(true)*/
-                    notificationManager.notify(notifyID, notification);
+                    notificationManager.notify(tmp,notifyID, notification);
                 }
 
             }
 
         });
         final TextView DialogV = (TextView) findViewById(R.id.dialogView);
-        final SharedPreferences runningOrNot = getSharedPreferences("com.wish.mysecretary", MODE_PRIVATE);
         final ImageButton SmileButton = (ImageButton)findViewById(R.id.smileButton);
         if(runningOrNot.getBoolean("chk", true)){
             DialogV.setText("點我的臉開始背景服務...");
@@ -212,6 +221,7 @@ public class MainActivity extends ActionBarActivity {
             public void onClick(View v) {
                 // TODO Auto-generated method stub
                 if (runningOrNot.getBoolean("chk", true)) {
+                    InitilizeChatHistory();
                     Toast.makeText(MainActivity.this, "start", Toast.LENGTH_SHORT).show();
                     DialogV.setText("我的專屬助理正在為您服務...");
                     runningOrNot.edit().putBoolean("chk", false).apply();
@@ -248,6 +258,7 @@ public class MainActivity extends ActionBarActivity {
         });
     }
 
+
     private void addKW(String tmp1 , String tmp2 , String tmp3){
         SQLiteDatabase uwdb = uwdbhelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -259,25 +270,11 @@ public class MainActivity extends ActionBarActivity {
     }
 
     static public String Natty(String tmp) {
-        Date curDate = new Date(System.currentTimeMillis());
         String out = "";
-        String testt = "";
-
-        List<java.util.Date> dateList = new ArrayList<>();
-
         Parser parser = new Parser();
         List<DateGroup> groups = parser.parse(tmp);
         for (DateGroup group : groups) {
-            List<java.util.Date> dates = group.getDates();
-            int line = group.getLine();
-            int column = group.getPosition();
             matchingValue = group.getText();
-            String syntaxTree = group.getSyntaxTree().toStringTree();
-            Map parseMap = group.getParseLocations();
-            boolean isRecurreing = group.isRecurring();
-            java.util.Date recursUntil = group.getRecursUntil();
-
-                        /* if any Dates are present in current group then add them to dateList */
             if (group.getDates() != null) {
                 out += group.getDates().toString();
                 Log.e("out", out);
@@ -311,7 +308,7 @@ public class MainActivity extends ActionBarActivity {
                         "試試看吧\n\n" +
                         "更詳細的說明請至Play Store查看\n" +
                         "謝謝您的支持\n\n" +
-                        "*當程式不斷閃退，請點擊右上角的三個小白點Initialize Keyword\n");
+                        "*當程式不斷閃退，請點擊右上角的三個小白點重置聊天記錄檔\n");
         DialogInterface.OnClickListener OkClick = new DialogInterface.OnClickListener()
         {
             public void onClick(DialogInterface dialog, int which) {
@@ -366,10 +363,14 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
     public void ShowRecordApp(){
-        AlertDialog.Builder dialog=new AlertDialog.Builder(this);
+        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        final AlertDialog.Builder dialog2 = new AlertDialog.Builder(this);
         LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
         final View selectapp=inflater.inflate(R.layout.selectapp, null);
         //TODO Select APP
+        CheckBox ClipBoard = (CheckBox) selectapp.findViewById(R.id.clipboard);
+        ClipBoard.setClickable(false);
+
         final CheckBox FB = (CheckBox) selectapp.findViewById(R.id.FB);
         if (App.getBoolean("FB", true)) {
             FB.setChecked(true);
@@ -380,6 +381,16 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
+                    dialog2
+                            .setTitle("需要root權限")
+                            .setMessage("開啟此項功能需要root權限，請確認手機已root且安裝root管理軟體如SuperSU，否則軟體將無法執行閃退。\n\n若發生不正常閃退請至 設定／應用程式／選取本應用程式／清除資料 再開啟程式重新設定")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Log.e("onClick", "successful");
+                                }
+                            })
+                            .show();
                     App.edit().putBoolean("FB", true).commit();
                 } else {
                     App.edit().putBoolean("FB", false).commit();
@@ -396,6 +407,16 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
+                    dialog2
+                            .setTitle("需要root權限")
+                            .setMessage("開啟此項功能需要root權限，請確認手機已root且安裝root管理軟體如SuperSU，否則軟體將無法執行閃退。\n\n若發生不正常閃退請至 設定／應用程式／選取本應用程式／清除資料 再開啟程式重新設定")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Log.e("onClick","successful");
+                                }
+                            })
+                            .show();
                     App.edit().putBoolean("Line", true).commit();
                 } else {
                     App.edit().putBoolean("Line", false).commit();
@@ -443,8 +464,7 @@ public class MainActivity extends ActionBarActivity {
             GetFBDB.copy();
             final Cursor fc = fdb.rawQuery("Select * from messages",null);
             fc.moveToLast();
-            values.put("endID", fc.getString(5));
-            wdb.update("count", values, "_id=2", null);
+            App.edit().putLong("FBcount",Long.valueOf(fc.getString(5))).apply();
             fc.close();
         }
         if (App.getBoolean("Line", true)) {
@@ -452,8 +472,7 @@ public class MainActivity extends ActionBarActivity {
             final Cursor c = db.rawQuery("Select * from chat_history", null);
             c.moveToLast();
             values = new ContentValues();
-            values.put("endID", c.getString(0));
-            wdb.update("count", values, "_id=1", null);
+            App.edit().putLong("LineCount",Long.valueOf(c.getString(0))).apply();
             c.close();
         }
 
@@ -630,13 +649,9 @@ public class MainActivity extends ActionBarActivity {
         }
         if (GoNatty) {
             String out;
-            String testt = "";
             out = Natty(tmp);
             if(!matchingValue.isEmpty()) {
                 String[] cutOut = out.split(" ");
-                for (int i = 0; i < 8; i++) {
-                    testt += cutOut[i] + '\n';
-                }
 
                 beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]) + 1, 0, 0);
                 Log.e("Natty", beginTime.toString());

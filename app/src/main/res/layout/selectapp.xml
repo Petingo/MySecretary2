@@ -6,6 +6,15 @@
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="剪貼簿"
+        android:id="@+id/clipboard"
+        android:checked="true"
+        android:clickable="false"
+        android:singleLine="false" />
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="簡訊"
         android:id="@+id/SMS"
         android:checked="false" />
@@ -13,14 +22,14 @@
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Line"
+        android:text="Line（需要root）"
         android:id="@+id/Line"
         android:checked="false" />
 
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Facebook Messenger"
+        android:text="Facebook Messenger（需要root）"
         android:id="@+id/FB"
         android:checked="false" />
 
