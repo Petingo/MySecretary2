@@ -22,21 +22,21 @@
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Line（需要root）"
+        android:text="Line（需要root），未優化，建議不要勾"
         android:id="@+id/Line"
         android:checked="false" />
 
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Facebook Messenger（需要root）"
+        android:text="FB Messenger（需要root），未優化，建議不要勾"
         android:id="@+id/FB"
         android:checked="false" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="若欲使用FB，請輸入您在FB上的名稱："
+        android:text=" 若欲使用FB，請輸入您在FB上的名稱："
         android:id="@+id/textView3"
         android:textColor="#ff313131" />
 

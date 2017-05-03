@@ -191,7 +191,7 @@ public class MainActivity extends ActionBarActivity {
                     final PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), notifyID, intent, flags);
                     final NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
                     final Notification notification = new Notification.Builder(getApplicationContext())
-                            .setSmallIcon(R.drawable.ic_launcher)
+                            .setSmallIcon(R.drawable.ic_stat_smallicon_01)
                             .setContentTitle(tmp)
                             .setContentText("點擊以消除")
                             .setPriority(priority)
@@ -369,7 +369,6 @@ public class MainActivity extends ActionBarActivity {
         final View selectapp=inflater.inflate(R.layout.selectapp, null);
         //TODO Select APP
         CheckBox ClipBoard = (CheckBox) selectapp.findViewById(R.id.clipboard);
-        ClipBoard.setClickable(false);
 
         final CheckBox FB = (CheckBox) selectapp.findViewById(R.id.FB);
         if (App.getBoolean("FB", true)) {
@@ -439,6 +438,7 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+
         final EditText FBname = (EditText) selectapp.findViewById(R.id.FBname);
         FBname.setText(App.getString("FBname", null));
         //TODO End Select APP

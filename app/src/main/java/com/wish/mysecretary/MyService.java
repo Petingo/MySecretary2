@@ -43,25 +43,28 @@ public class MyService extends IntentService {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onHandleIntent(Intent intent) {
-        //Random ran = new Random(System.currentTimeMillis());
-        final int notifyID = 1; // 通知的識別號碼
-        //notID.edit().putInt("ID",notifyID).commit();
-        final int requestCode = notifyID; // PendingIntent的Request Code
-        final Intent openintent = new Intent(getApplicationContext(), MainActivity.class); // 開啟另一個Activity的Intent
-        final int flags = PendingIntent.FLAG_UPDATE_CURRENT; // ONE_SHOT：PendingIntent只使用一次；CANCEL_CURRENT：PendingIntent執行前會先結束掉之前的；NO_CREATE：沿用先前的PendingIntent，不建立新的PendingIntent；UPDATE_CURRENT：更新先前PendingIntent所帶的額外資料，並繼續沿用
-        final TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext()); // 建立TaskStackBuilder
-        stackBuilder.addParentStack(MainActivity.class); // 加入目前要啟動的Activity，這個方法會將這個Activity的所有上層的Activity(Parents)都加到堆疊中
-        stackBuilder.addNextIntent(openintent); // 加入啟動Activity的Intent
 
-        final PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), requestCode, openintent, flags);
-        final int priority = Notification.PRIORITY_MAX;
-        final NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        final Notification notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("我的專屬助理正在背景執行...").setContentText("Running in background").setContentIntent(pendingIntent).build();
-        notification.flags |= Notification.FLAG_ONGOING_EVENT;
-        notificationManager.notify(notifyID, notification);
+        if(MainActivity.App.getBoolean("showNoti",true)){
+            final int notifyID = 1; // 通知的識別號碼
+            //notID.edit().putInt("ID",notifyID).commit();
+            final int requestCode = notifyID; // PendingIntent的Request Code
+            final Intent openintent = new Intent(getApplicationContext(), MainActivity.class); // 開啟另一個Activity的Intent
+            final int flags = PendingIntent.FLAG_UPDATE_CURRENT; // ONE_SHOT：PendingIntent只使用一次；CANCEL_CURRENT：PendingIntent執行前會先結束掉之前的；NO_CREATE：沿用先前的PendingIntent，不建立新的PendingIntent；UPDATE_CURRENT：更新先前PendingIntent所帶的額外資料，並繼續沿用
+            final TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext()); // 建立TaskStackBuilder
+            stackBuilder.addParentStack(MainActivity.class); // 加入目前要啟動的Activity，這個方法會將這個Activity的所有上層的Activity(Parents)都加到堆疊中
+            stackBuilder.addNextIntent(openintent); // 加入啟動Activity的Intent
+
+            final PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), requestCode, openintent, flags);
+            final int priority = Notification.PRIORITY_MAX;
+            final NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            final Notification notification = new Notification.Builder(getApplicationContext()).setContentTitle("我的專屬助理正在背景執行...").setContentText("Running in background").setContentIntent(pendingIntent).build();
+            notification.flags |= Notification.FLAG_ONGOING_EVENT;
+
+            notificationManager.notify(notifyID, notification);
+        }
+
         if(MainActivity.App.getBoolean("FB",true)||MainActivity.App.getBoolean("Line",true)) {
             while (b) {
-
                 LineDBhelper dbhelper = null;
                 SQLiteDatabase db;
 
@@ -397,12 +400,8 @@ public class MyService extends IntentService {
                         }
                         if (GoNatty || Eng) {
                             String out = "";
-                            String testt = "";
                             out = Natty(tmp);
                             String[] cutOut = out.split(" ");
-                            for (int i = 0; i < 8; i++) {
-                                testt += cutOut[i] + '\n';
-                            }
 
                             beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]) + 1, 0, 0);
                             Log.e("Natty", beginTime.toString());
