@@ -67,8 +67,8 @@ public class MainActivity extends ActionBarActivity {
     static private SQLiteDatabase wdb;
     static private UserKeywordDBhelper uwdbhelper=null;
     static private SQLiteDatabase uwdb;
-    private IncomingSms Incoming_Sms = null;
-    private static final String SMS_Action="android.provider.Telephony.SMS_RECEIVED";
+//    private IncomingSms Incoming_Sms = null;
+//    private static final String SMS_Action="android.provider.Telephony.SMS_RECEIVED";
     public static SharedPreferences App;
     public static SharedPreferences runningOrNot;
     /*Announce of ClipBoard*/
@@ -225,9 +225,9 @@ public class MainActivity extends ActionBarActivity {
                     Toast.makeText(MainActivity.this, "start", Toast.LENGTH_SHORT).show();
                     DialogV.setText("我的專屬助理正在為您服務...");
                     runningOrNot.edit().putBoolean("chk", false).apply();
-                    Incoming_Sms = new IncomingSms();
-                    IntentFilter intentFilter = new IntentFilter();
-                    intentFilter.addAction(SMS_Action);
+//                    Incoming_Sms = new IncomingSms();
+//                    IntentFilter intentFilter = new IntentFilter();
+//                    intentFilter.addAction(SMS_Action);
 
                     myClipBoard = (ClipboardManager) MainActivity.this.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
                     RegPrimaryClipChanged();
@@ -364,7 +364,7 @@ public class MainActivity extends ActionBarActivity {
     }
     public void ShowRecordApp(){
         final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        final AlertDialog.Builder dialog2 = new AlertDialog.Builder(this);
+        final myDialog myDialog = new myDialog();
         LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
         final View selectapp=inflater.inflate(R.layout.selectapp, null);
         //TODO Select APP
@@ -380,16 +380,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    dialog2
-                            .setTitle("需要root權限")
-                            .setMessage("開啟此項功能需要root權限，請確認手機已root且安裝root管理軟體如SuperSU，否則軟體將無法執行閃退。\n\n若發生不正常閃退請至 設定／應用程式／選取本應用程式／清除資料 再開啟程式重新設定")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Log.e("onClick", "successful");
-                                }
-                            })
-                            .show();
+                    myDialog.checkRootDialog(getApplicationContext()).show();
                     App.edit().putBoolean("FB", true).commit();
                 } else {
                     App.edit().putBoolean("FB", false).commit();
@@ -406,16 +397,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    dialog2
-                            .setTitle("需要root權限")
-                            .setMessage("開啟此項功能需要root權限，請確認手機已root且安裝root管理軟體如SuperSU，否則軟體將無法執行閃退。\n\n若發生不正常閃退請至 設定／應用程式／選取本應用程式／清除資料 再開啟程式重新設定")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Log.e("onClick","successful");
-                                }
-                            })
-                            .show();
+                    myDialog.checkRootDialog(getApplicationContext()).show();
                     App.edit().putBoolean("Line", true).commit();
                 } else {
                     App.edit().putBoolean("Line", false).commit();
@@ -538,7 +520,7 @@ public class MainActivity extends ActionBarActivity {
         return true;
 
     }
-    public static boolean  analaysis(String tmp){
+    public static boolean analaysis(String tmp){
         Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
         Cursor uwc = uwdb.rawQuery("Select * from keyword order by weight DESC", null);
 
