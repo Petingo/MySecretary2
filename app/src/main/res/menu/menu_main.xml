@@ -3,11 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
     <item android:id="@+id/opt1" android:title="新增自訂關鍵字"
         android:orderInCategory="1" app:showAsAction="never" />
-    <item android:id="@+id/opt2" android:title="重置關鍵字資料庫"
-        android:orderInCategory="1" app:showAsAction="never" />
+    <item
+        android:id="@+id/opt2"
+        android:orderInCategory="1"
+        android:title="重置關鍵字資料庫" />
     <item android:id="@+id/opt3" android:title="重置聊天記錄檔"
-        android:orderInCategory="1" app:showAsAction="never" />
-    <item android:id="@+id/SelectAPP" android:title="選擇程式"
         android:orderInCategory="1" app:showAsAction="never" />
     <item android:id="@+id/Intro" android:title="使用說明"
         android:orderInCategory="1" app:showAsAction="never" />
