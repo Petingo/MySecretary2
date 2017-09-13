@@ -5,25 +5,19 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.AvoidXfermode;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTabHost;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,32 +26,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.joestelmach.natty.DateGroup;
-import com.joestelmach.natty.Parser;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Date;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
 public class MainActivity extends ActionBarActivity {
     private static Context c;
-    static public String matchingValue;
     public static boolean nomatterwhat = true;
     static private KeywordDBhelper wdbhelper = null;
     static private SQLiteDatabase wdb;
@@ -65,38 +48,6 @@ public class MainActivity extends ActionBarActivity {
     static private SQLiteDatabase uwdb;
     public static SharedPreferences App;
     public static SharedPreferences runningOrNot;
-    /*Announce of ClipBoard*/
-    ClipboardManager myClipBoard;
-    static boolean bHasClipChangedListener = false;
-
-    ClipboardManager.OnPrimaryClipChangedListener mPrimaryClipChangedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
-        public void onPrimaryClipChanged() {
-            ClipData clipData = myClipBoard.getPrimaryClip();
-            String clipDatatmp = clipData.getItemAt(0).toString().replace("ClipData.Item { T:", "");
-            clipDatatmp = clipDatatmp.replace(" }", "");
-            Log.d("***** clip changed,", "clipData:" + clipData.getItemAt(0));
-            nomatterwhat = false;
-            if (!clipDatatmp.equals(App.getString("clipContent", null))) {
-                MainActivity.analaysis(clipDatatmp);
-                App.edit().putString("clipContent", clipDatatmp).apply();
-            }
-        }
-    };
-
-    private void RegPrimaryClipChanged() {
-        if (!bHasClipChangedListener) {
-            myClipBoard.addPrimaryClipChangedListener(mPrimaryClipChangedListener);
-            bHasClipChangedListener = true;
-        }
-    }
-
-    private void UnRegPrimaryClipChanged() {
-        if (bHasClipChangedListener) {
-            myClipBoard.removePrimaryClipChangedListener(mPrimaryClipChangedListener);
-            bHasClipChangedListener = false;
-        }
-    }
-    /*End of Announce of ClipBoard*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +92,7 @@ public class MainActivity extends ActionBarActivity {
                 } else {
                     editkeyin.setText("");
                     nomatterwhat = true;
-                    analaysis(tmp);
+                    analysis(tmp);
                 }
 
             }
@@ -197,31 +148,27 @@ public class MainActivity extends ActionBarActivity {
         SmileButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent serviceIntent = new Intent(MainActivity.this, MyService.class);
+
                 if (runningOrNot.getBoolean("chk", true)) {
                     Toast.makeText(MainActivity.this, "start", Toast.LENGTH_SHORT).show();
                     DialogV.setText("我的專屬助理正在為您服務...");
                     runningOrNot.edit().putBoolean("chk", false).apply();
 
-                    myClipBoard = (ClipboardManager) MainActivity.this.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                    RegPrimaryClipChanged();
-
                     SmileButton.setImageResource(R.drawable.icon_on2);
                     SmileButton.setImageResource(R.drawable.icon_on1);
 
-                    Intent intent = new Intent(MainActivity.this, MyService.class);
-                    startService(intent);
-                } else {
+                    startService(serviceIntent);
+                }
+                else {
                     Toast.makeText(MainActivity.this, "end", Toast.LENGTH_SHORT).show();
                     DialogV.setText("點我的臉開始背景服務...");
                     runningOrNot.edit().putBoolean("chk", true).apply();
 
-                    UnRegPrimaryClipChanged();
-
                     SmileButton.setImageResource(R.drawable.icon_on2);
                     SmileButton.setImageResource(R.drawable.icon_off);
 
-                    Intent intent = new Intent(MainActivity.this, MyService.class);
-                    stopService(intent);
+                    stopService(serviceIntent);
 
                     NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     mNotificationManager.cancel(1);
@@ -362,7 +309,7 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    public static boolean analaysis(String tmp) {
+    public static boolean analysis(String tmp) {
         Cursor wc = wdb.rawQuery("Select * from keyword order by weight DESC", null);
         Cursor uwc = uwdb.rawQuery("Select * from keyword order by weight DESC", null);
 
@@ -472,32 +419,32 @@ public class MainActivity extends ActionBarActivity {
             }
         }
         if (GoNatty) {
-            String out;
-            out = Natty.getResult(tmp);
-            if (!matchingValue.isEmpty()) {
-                String[] cutOut = out.split(" ");
+            Natty mNatty = new Natty(tmp);
+            if (!mNatty.getMatchingValue().isEmpty()) {
+                Log.e("output",mNatty.getOutput());
+                String[] cutOut = mNatty.getOutput().split(" ");
 
                 beginTime.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]) + 1, 0, 0);
                 Log.e("Natty", beginTime.toString());
-                Log.e("matchingValue", matchingValue);
-                tmp = tmp.replace(matchingValue, "");
+                Log.e("matchingValue", mNatty.getMatchingValue());
+                tmp = tmp.replace(mNatty.getMatchingValue(), "");
             }
         }
 
-        if (Eng) {
-            String out;
-            out = Natty.getResult(tmp);
-            if (!matchingValue.isEmpty()) {
-                String[] cutOut = out.split(" ");
-                Calendar Timetemp = Calendar.getInstance();
-                Timetemp.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]), Integer.parseInt(cutOut[3]), Integer.parseInt(cutOut[4]));
-                beginTimetmp1 = Timetemp.getTimeInMillis();
-                beginTime.setTimeInMillis(0);
-                Log.e("ENGbeginTime", String.valueOf(beginTimetmp1));
-                Log.e("matchingValue", matchingValue);
-                tmp = tmp.replace(matchingValue, "");
-            }
-        }
+//        if (Eng) {
+//            String out;
+//            out = Natty.getResult(tmp);
+//            if (!matchingValue.isEmpty()) {
+//                String[] cutOut = out.split(" ");
+//                Calendar Timetemp = Calendar.getInstance();
+//                Timetemp.set(Integer.parseInt(cutOut[7]), Integer.parseInt(cutOut[1]), Integer.parseInt(cutOut[2]), Integer.parseInt(cutOut[3]), Integer.parseInt(cutOut[4]));
+//                beginTimetmp1 = Timetemp.getTimeInMillis();
+//                beginTime.setTimeInMillis(0);
+//                Log.e("ENGbeginTime", String.valueOf(beginTimetmp1));
+//                Log.e("matchingValue", matchingValue);
+//                tmp = tmp.replace(matchingValue, "");
+//            }
+//        }
 
 
         Long datetmp = beginTime.getTimeInMillis();
@@ -543,9 +490,12 @@ public class MainActivity extends ActionBarActivity {
         //////////
         beginTime.setTimeInMillis(datetmp + beginTimetmp1);
         wc.moveToLast();
+        String[] num = {"零","一","二","三","四","五","六","七","八","九","十"};
         String desc;
         desc = tmp.replace(" ", "");
-
+        for(int i = 0 ; i <= 10 ; i++){
+            desc = desc.replace(String.valueOf(i),num[i]);
+        }
         Log.e("Timezone", String.valueOf(beginTime.getTimeZone().getRawOffset()));
         Long Timezone = (long) beginTime.getTimeZone().getRawOffset();
 

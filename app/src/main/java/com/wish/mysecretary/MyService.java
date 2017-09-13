@@ -5,15 +5,21 @@ import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.app.TaskStackBuilder;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.os.IBinder;
 import android.provider.CalendarContract;
+import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 
 import java.sql.Date;
@@ -22,23 +28,26 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-public class MyService extends IntentService {
-
-    static public boolean b=true;
-    public String matchingValue;
-    public MyService() {
-        super("MyService");
-    }
+public class MyService extends Service {
+    ClipboardManager.OnPrimaryClipChangedListener mPClipChangedListener = new ClipboardManager.OnPrimaryClipChangedListener() {
+        @Override
+        public void onPrimaryClipChanged() {
+            ClipboardManager mClipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            ClipData mClipData = mClipboardManager.getPrimaryClip();
+            Log.e("ClipData",String.valueOf(mClipData.getItemAt(0)));
+        }
+    };
 
     @Override
     public void onCreate(){
         super.onCreate();
         Log.e("C","onCreate");
+        ((ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).addPrimaryClipChangedListener(mPClipChangedListener);
     }
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    @Override
-    protected void onHandleIntent(Intent intent) {
 
+//    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+//    @Override
+//    protected void onHandleIntent(Intent intent) {
 //        if(MainActivity.App.getBoolean("showNoti",true)){
 //            final int notifyID = 1; // 通知的識別號碼
 //            //notID.edit().putInt("ID",notifyID).commit();
@@ -66,17 +75,16 @@ public class MyService extends IntentService {
 //            notification.flags |= Notification.FLAG_ONGOING_EVENT;
 //            notificationManager.notify(notifyID, notification);
 //        }
-
-    }
+//   }
     public void onDestroy() {
         super.onDestroy();
-        if (MainActivity.runningOrNot.getBoolean("chk", false)) {
-            Intent intent = new Intent(MyService.this, MyService.class);
-            startService(intent);
-        } else {
-            b = false;
-        }
         Log.e("D", "onDestroy");
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 }
 
